@@ -18,7 +18,7 @@ A GNOME Shell extension that displays the current moon phase in the top bar with
 - **Star Walk Integration**: One-click access to detailed lunar calendar
 - **Clean Display**: Minimalist design that blends with GNOME
 
-System Requirements
+System Requirements.
 This extension is available on all Linux distributions using GNOME.
 Currently supports GNOME 46, 47, 48 and 49.
 
