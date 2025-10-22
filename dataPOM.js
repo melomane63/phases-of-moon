@@ -1,5 +1,5 @@
 /* dataPOM.js - Lunar phase data 2025-2029 */
- // (USNO https://aa.usno.navy.mil/data/MoonPhases)
+// (USNO https://aa.usno.navy.mil/data/MoonPhases)
 export const moonPhases = [
     { date: new Date('2025-09-21T19:54:00Z'), name: 'New Moon', illumination: 0 },
     { date: new Date('2025-09-29T23:54:00Z'), name: 'First Quarter', illumination: 50 },
@@ -213,4 +213,4 @@ export const moonPhases = [
     { date: new Date('2029-10-14T11:09:00Z'), name: 'First Quarter', illumination: 50 },
     { date: new Date('2029-10-22T09:27:00Z'), name: 'Full Moon', illumination: 100 },
     { date: new Date('2029-10-30T11:32:00Z'), name: 'Last Quarter', illumination: 50 }
-        ];
+];
