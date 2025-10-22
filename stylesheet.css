@@ -1,0 +1,74 @@
+/* Fully reactive menu item (entire row is clickable) */
+.moon-phase-menu {
+    padding: 0 12px;       /* horizontal padding only */
+    min-height: 110px;     
+    transition: background-color 0.1s ease;
+}
+
+/* Horizontal container holding icon and text */
+.styled-container {
+    spacing: 20px;
+    align-items: center;
+}
+
+/* Icon image (moon) */
+.popup-menu-icon {
+    width: 100px;
+    height: 100px;
+}
+
+/* Column for all text labels */
+.text-column {
+    justify-content: center;
+    padding-top: 5px;      /* 5px above the icon */
+    padding-bottom: 5px;   /* 5px below the icon */
+    padding-right: 8px;    /* space to the right of the text */
+}
+
+/* Current moon phase label (bold) */
+.phase-current-label {
+    font-weight: bold;
+    font-size: 16px;
+    color: var(--text-color);
+    margin: 0 0 2px 0;
+    line-height: 1.4;
+}
+
+/* Next moon phase label (bold) */
+.phase-next-label {
+    font-weight: bold;
+    font-size: 14px;
+    color: var(--text-color);
+    margin: 2px 0 0 0;
+    line-height: 1.4;
+}
+
+/* Secondary labels (illumination %, age, time to next phase) */
+.secondary-label {
+    font-size: 12px;
+    color: var(--text-secondary-color);
+    margin: 0 0 2px 0;
+    font-style: italic;
+    line-height: 1.3;
+}
+
+/* Separator line between current info and next phase info */
+.custom-separator {
+    height: 1px;
+    background-color: #888888;
+    margin-top: 6px;
+    margin-bottom: 6px;
+}
+
+/* Hover effect for the menu item */
+.moon-phase-menu:hover {
+    background-color: var(--selected-background-color);
+    border-radius: 18px;
+}
+
+/* Active/click effect for the menu item */
+.moon-phase-menu:active {
+    background-color: var(--selected-background-color-activated);
+    border-radius: 18px;
+}
+

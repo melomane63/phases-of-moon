@@ -1,0 +1,8 @@
+{
+  "name": "Phases of Moon",
+  "description": "Display current moon phase",
+  "uuid": "phases-of-moon@melomane13",
+  "shell-version": ["46", "47", "48", "49"],
+  "url": "https://github.com/melomane63/phases-of-moon.git",
+  "version": 2
+}
