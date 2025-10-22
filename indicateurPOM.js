@@ -131,7 +131,7 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         const minutes = Math.floor((seconds % 3600) / 60);
         
         let parts = [];
-        if (days > 0) parts.push(`${days}j`);
+        if (days > 0) parts.push(`${days}d`);
         if (hours > 0) parts.push(`${hours}h`);
         if (minutes > 0) parts.push(`${minutes}m`);
         
