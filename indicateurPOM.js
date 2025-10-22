@@ -3,6 +3,7 @@ import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import St from 'gi://St';
+import GdkPixbuf from 'gi://GdkPixbuf';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
 import { PopupCustom } from './popupPOM.js';
@@ -19,11 +20,11 @@ import {
 
 export const MoonPhaseIndicator = GObject.registerClass(
 class MoonPhaseIndicator extends PanelMenu.Button {
-    _init() {
+    _init(path) {
         super._init(0.0, 'Moon Phase Indicator');
 
-        // Get extension path
-        this._extensionPath = this._getExtensionPath();
+        // Use extension path passed from entry point
+        this._extensionPath = path;
         this._calculator = new MoonPhaseCalculator();
         this._timerId = null;
 
@@ -38,18 +39,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         this._buildMenu();
         this._updateMoonPhase();
         this._startTimer();
-    }
-
-    _getExtensionPath() {
-        try {
-            const extensionUri = import.meta.url;
-            const extensionFile = Gio.File.new_for_uri(extensionUri);
-            const extensionDir = extensionFile.get_parent();
-            return extensionDir.get_path();
-        } catch (err) {
-            console.error('Error getting extension path:', err);
-            return '';
-        }
     }
 
     _startTimer() {
@@ -110,6 +99,7 @@ class MoonPhaseIndicator extends PanelMenu.Button {
             try {
                 const gicon = Gio.icon_new_for_string(iconPath);
                 this.moon_phase_icon.gicon = gicon;
+                this.moon_phase_icon.icon_name = null;
             } catch (error) {
                 console.error(`Error setting topbar icon: ${error}`);
                 this.moon_phase_icon.icon_name = 'weather-clear-night-symbolic';
@@ -235,7 +225,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
 
     _createCroppedImage(cachePath, date) {
         try {
-            const GdkPixbuf = imports.gi.GdkPixbuf;
             const pixbuf = GdkPixbuf.Pixbuf.new_from_file(cachePath);
 
             const cropSize = 40;
