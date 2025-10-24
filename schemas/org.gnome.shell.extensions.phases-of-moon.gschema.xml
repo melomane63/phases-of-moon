@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist gettext-domain="phases-of-moon-extension">
+  <schema id="org.gnome.shell.extensions.phases-of-moon"
+          path="/org/gnome/shell/extensions/phases-of-moon/">
+
+    <key name="show-reversed-moon-phase" type="b">
+      <default>true</default>
+      <summary>Whether to display the reversed moon phase in light themes</summary>
+    </key>
+
+    <key name="panel-position" type="s">
+      <default>"center"</default>
+      <summary>Panel position for the indicator (left, center, right)</summary>
+      <description>Defines in which part of the GNOME panel the indicator is displayed</description>
+    </key>
+
+    <key name="panel-priority" type="i">
+      <default>0</default>
+      <summary>Indicator priority (0–7)</summary>
+      <description>Sets the indicator’s order within its panel section</description>
+    </key>
+
+  </schema>
+</schemalist>
+
