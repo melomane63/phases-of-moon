@@ -14,9 +14,9 @@ A GNOME Shell extension that displays the current moon phase in the top bar with
   - Illumination percentage
   - Moon age in days
   - Next phase countdown
-- **Interactive Popup**: Click to view comprehensive lunar data
-- **Star Walk Integration**: One-click access to detailed lunar calendar
+- **Interactive Popup**: One-click access to detailed lunar calendar on Starwalk https://starwalk.space/en/moon-calendar
 - **Clean Display**: Minimalist design that blends with GNOME
+  - Options to show "negative" image of moon on light theme, position and index of icon on topbar
 
 System Requirements.
 This extension is available on all Linux distributions using GNOME.
