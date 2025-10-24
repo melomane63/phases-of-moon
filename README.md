@@ -24,8 +24,7 @@ Currently supports GNOME 46, 47, 48 and 49.
 
 
 ## Installation
-
+On Gnome extension 
 ### Manual Installation
 clone this repository and copy to extensions folder
 
-On Gnome extension soon
