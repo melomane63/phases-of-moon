@@ -74,7 +74,7 @@ export default class PhasesOfMoonPreferences extends ExtensionPreferences {
 
         const priorityRow = new Adw.ComboRow({
             title: _('Indicator priority'),
-            subtitle: _('Choose the indicator priority (0 = lowest, 7 = highest)'),
+            subtitle: _('Choose the indicator priority (0 = highest, 7 = lowest)'),
             model: priorityModel,
         });
         priorityRow.use_subtitle = true;
