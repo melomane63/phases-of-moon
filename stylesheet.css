@@ -6,19 +6,19 @@
 }
 
 /* Horizontal container holding icon and text */
-.styled-container {
+.moon-phase-menu .styled-container {
     spacing: 20px;
     align-items: center;
 }
 
 /* Icon image (moon) */
-.popup-menu-icon {
+.moon-phase-menu .popup-menu-icon {
     width: 100px;
     height: 100px;
 }
 
 /* Column for all text labels */
-.text-column {
+.moon-phase-menu .text-column {
     justify-content: center;
     padding-top: 5px;      /* 5px above the icon */
     padding-bottom: 5px;   /* 5px below the icon */
@@ -26,7 +26,7 @@
 }
 
 /* Current moon phase label (bold) */
-.phase-current-label {
+.moon-phase-menu .phase-current-label {
     font-weight: bold;
     font-size: 16px;
     color: var(--text-color);
@@ -35,7 +35,7 @@
 }
 
 /* Next moon phase label (bold) */
-.phase-next-label {
+.moon-phase-menu .phase-next-label {
     font-weight: bold;
     font-size: 14px;
     color: var(--text-color);
@@ -44,7 +44,7 @@
 }
 
 /* Secondary labels (illumination %, age, time to next phase) */
-.secondary-label {
+.moon-phase-menu .secondary-label {
     font-size: 12px;
     color: var(--text-secondary-color);
     margin: 0 0 2px 0;
@@ -53,7 +53,7 @@
 }
 
 /* Separator line between current info and next phase info */
-.custom-separator {
+.moon-phase-menu .custom-separator {
     height: 1px;
     background-color: #888888;
     margin-top: 6px;
