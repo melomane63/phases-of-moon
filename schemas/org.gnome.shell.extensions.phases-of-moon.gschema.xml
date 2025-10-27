@@ -4,7 +4,7 @@
           path="/org/gnome/shell/extensions/phases-of-moon/">
 
     <key name="show-reversed-moon-phase" type="b">
-      <default>true</default>
+      <default>false</default>
       <summary>Whether to display the reversed moon phase in light themes</summary>
     </key>
 
