@@ -22,8 +22,8 @@ export default class PhasesOfMoonPreferences extends ExtensionPreferences {
 
         // --- SwitchRow: Toggle reversed moon image ---
         const reversedSwitch = new Adw.SwitchRow({
-            title: _('Moon phase image'),
-            subtitle: _('Display the reversed image when using a light theme'),
+            title: _('Moon phase display'),
+            subtitle: _('Disabled: colored image, Enabled: grayscale image'),
         });
 
         // Bind the switch to the GSettings key

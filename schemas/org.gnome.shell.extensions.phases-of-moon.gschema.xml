@@ -4,8 +4,8 @@
           path="/org/gnome/shell/extensions/phases-of-moon/">
 
     <key name="show-reversed-moon-phase" type="b">
-      <default>false</default>
-      <summary>Whether to display the reversed moon phase in light themes</summary>
+      <default>true</default>
+      <summary>Display grayscale moon phase</summary>
     </key>
 
     <key name="panel-position" type="s">
