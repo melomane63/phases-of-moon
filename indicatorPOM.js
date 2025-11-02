@@ -213,12 +213,12 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         return `/tmp/moon-phase-starwalk-${year}${month}${day}.png`;
     }
 
-    _getCroppedPath(date) {
-        // Generate path for cropped version of the moon image
+    _getCroppedCircledPath(date) {
+        // Generate path for cropped circled version of the moon image
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
-        return `/tmp/moon-phase-cropped-${year}${month}${day}.png`;
+        return `/tmp/moon-phase-cropped-circled-${year}${month}${day}.png`;
     }
 
     _getInvertedPath(date) {
@@ -226,7 +226,7 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
-        return `/tmp/moon-phase-cropped-${year}${month}${day}-inverted.png`;
+        return `/tmp/moon-phase-cropped-inverted-${year}${month}${day}.png`;
     }
 
     _getStaticMoonPhasePath() {
@@ -249,76 +249,94 @@ class MoonPhaseIndicator extends PanelMenu.Button {
     }
 
     _updatePopupSmart(phase, date) {
-        // Smart image loading with caching and theme adaptation
+        // Determine file paths
         const cachePath = this._getCachePath(date);
-        const cacheFile = Gio.File.new_for_path(cachePath);
-        const croppedPath = this._getCroppedPath(date);
-        const croppedFile = Gio.File.new_for_path(croppedPath);
+        const croppedCircledPath = this._getCroppedCircledPath(date);
         const invertedPath = this._getInvertedPath(date);
-        const invertedFile = Gio.File.new_for_path(invertedPath);
 
-        // Determine which image version to use based on theme and settings
+        // Theme and user option parameters
         const isDarkTheme = this._isDarkTheme();
-        const isSessionLight = Main.sessionMode.colorScheme === 'prefer-light';
         const showReversed = this._extension._settings.get_boolean('show-reversed-moon-phase');
-        const useInverted = !isDarkTheme && (isSessionLight || showReversed);
 
-        // Image loading strategy: check cached files in order of preference
-        if (useInverted) {
-            // Prefer inverted image for light themes
-            if (invertedFile.query_exists(null)) {
-                this._styledMenuItem.setMoonImage(invertedFile.get_path());
-            } else if (croppedFile.query_exists(null)) {
-                try {
-                    const pixbuf = GdkPixbuf.Pixbuf.new_from_file(croppedPath);
-                    this._createInvertedImage(pixbuf, date);
-                    this._styledMenuItem.setMoonImage(invertedFile.get_path());
-                } catch (error) {
-                    console.error('Error creating inverted image from cropped:', error);
-                    this._styledMenuItem.setMoonImage(croppedFile.get_path());
-                }
-            } else if (cacheFile.query_exists(null)) {
-                this._createCroppedImage(cachePath, date);
-                if (invertedFile.query_exists(null)) {
-                    this._styledMenuItem.setMoonImage(invertedFile.get_path());
-                }
-            } else {
-                this._downloadStarWalkWithSymbolicFallback(phase, date, cachePath);
-            }
-        } else {
-            // Prefer normal cropped image for dark themes
-            if (croppedFile.query_exists(null)) {
-                this._styledMenuItem.setMoonImage(croppedFile.get_path());
-            } else if (cacheFile.query_exists(null)) {
-                this._createCroppedImage(cachePath, date);
-            } else {
-                this._downloadStarWalkWithSymbolicFallback(phase, date, cachePath);
-            }
+        // Determine which image to display
+        const useInverted = !isDarkTheme && showReversed;
+        const requestedImagePath = useInverted ? invertedPath : croppedCircledPath;
+
+        // Check if requested image exists
+        const file = Gio.File.new_for_path(requestedImagePath);
+        if (file.query_exists(null)) {
+            this._styledMenuItem.setMoonImage(requestedImagePath);
+            return;
         }
+
+        // If requested image doesn't exist, download StarWalk and recreate all images
+        const starwalkUrl = this._getStarWalkUrl(date);
+        this._downloadImageSimple(starwalkUrl, cachePath)
+            .then(() => {
+                this._createCroppedImage(cachePath, date);
+                this._styledMenuItem.setMoonImage(requestedImagePath);
+            })
+            .catch((error) => {
+                console.error('StarWalk download failed, using symbolic fallback:', error);
+                this._useSymbolicFallback(phase.name);
+            });
     }
 
     _createCroppedImage(cachePath, date) {
-        // Crop the downloaded image to remove borders
         try {
             const pixbuf = GdkPixbuf.Pixbuf.new_from_file(cachePath);
+            const originalWidth = pixbuf.get_width();
+            const originalHeight = pixbuf.get_height();
 
-            // Define crop dimensions (40px border removal)
-            const cropSize = 40;
-            const cropWidth = pixbuf.get_width() - (cropSize * 2);
-            const cropHeight = pixbuf.get_height() - (cropSize * 2);
-            const cropped = pixbuf.new_subpixbuf(cropSize, cropSize, cropWidth, cropHeight);
+            // 1. Find moon disk boundaries using adaptive detection
+            const bounds = this._findMoonDiskBounds(pixbuf);
+            
+            if (!bounds) {
+                throw new Error("Unable to detect moon disk");
+            }
 
-            // Save cropped version and create inverted version
-            const croppedPath = this._getCroppedPath(date);
-            cropped.savev(croppedPath, 'png', [], []);
+            // 2. Calculate exact disk diameter
+            const diskDiameter = Math.max(bounds.width, bounds.height);
+            const centerX = bounds.x + bounds.width / 2;
+            const centerY = bounds.y + bounds.height / 2;
+
+            // 3. Define output size with 3 pixels margin on each side
+            const margin = 3;
+            const cropSize = diskDiameter + (margin * 2);
+
+            // 4. Calculate crop area to center the disk
+            let cropX = Math.max(0, Math.floor(centerX - cropSize / 2));
+            let cropY = Math.max(0, Math.floor(centerY - cropSize / 2));
             
-            this._createInvertedImage(cropped, date);
+            // Adjust if we exceed image borders
+            cropX = Math.min(cropX, originalWidth - cropSize);
+            cropY = Math.min(cropY, originalHeight - cropSize);
             
-            // Also save to static path for other components
+            const finalCropX = Math.max(0, cropX);
+            const finalCropY = Math.max(0, cropY);
+            const finalCropSize = Math.min(cropSize, originalWidth - finalCropX, originalHeight - finalCropY);
+
+            console.log(`Adaptive cropping: disk diameter=${diskDiameter}, crop size=${finalCropSize}, position=(${finalCropX}, ${finalCropY}), margin=${margin}px`);
+
+            // 5. Perform the crop
+            const croppedPixbuf = pixbuf.new_subpixbuf(finalCropX, finalCropY, finalCropSize, finalCropSize);
+
+            // 6. Create circled version (for dark theme)
+            this._createCircledVersion(croppedPixbuf, date, diskDiameter, margin, this._getCroppedCircledPath(date));
+            
+            // 7. Create inverted + circled version (for light theme)
+            this._createInvertedAndCircledVersion(croppedPixbuf, date, diskDiameter, margin);
+            
+            // 8. Save to static path (moonphase.png) - cropped without circle
             const staticPath = this._getStaticMoonPhasePath();
-            cropped.savev(staticPath, 'png', [], []);
+            croppedPixbuf.savev(staticPath, 'png', [], []);
             
-            this._styledMenuItem.setMoonImage(croppedPath);
+            // 9. Delete temporary source file only
+            this._deleteFile(cachePath);
+            
+            // Set the default image to circled version
+            const circledPath = this._getCroppedCircledPath(date);
+            this._styledMenuItem.setMoonImage(circledPath);
 
         } catch (error) {
             console.error('Error creating cropped image:', error);
@@ -326,8 +344,163 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         }
     }
 
-    _createInvertedImage(pixbuf, date) {
-        // Create inverted color version of image for light themes
+    _findMoonDiskBounds(pixbuf) {
+        const width = pixbuf.get_width();
+        const height = pixbuf.get_height();
+        const rowstride = pixbuf.get_rowstride();
+        const n_channels = pixbuf.get_n_channels();
+        const has_alpha = pixbuf.get_has_alpha();
+        const pixels = pixbuf.get_pixels();
+
+        let minX = width;
+        let minY = height;
+        let maxX = 0;
+        let maxY = 0;
+
+        // VERY LOW threshold for perfectly transparent background
+        const ALPHA_THRESHOLD = 1;
+
+        // Analyze all pixels to find moon disk boundaries
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                const pixelIndex = y * rowstride + x * n_channels;
+                
+                if (has_alpha) {
+                    const alpha = pixels[pixelIndex + 3];
+                    // If pixel is not perfectly transparent (alpha > 0)
+                    if (alpha > ALPHA_THRESHOLD) {
+                        if (x < minX) minX = x;
+                        if (y < minY) minY = y;
+                        if (x > maxX) maxX = x;
+                        if (y > maxY) maxY = y;
+                    }
+                } else {
+                    // If no alpha channel, use brightness
+                    const r = pixels[pixelIndex];
+                    const g = pixels[pixelIndex + 1];
+                    const b = pixels[pixelIndex + 2];
+                    const brightness = (r + g + b) / 3;
+                    
+                    // Threshold to detect "visible" pixels (exclude white/transparent background)
+                    if (brightness < 240) {
+                        if (x < minX) minX = x;
+                        if (y < minY) minY = y;
+                        if (x > maxX) maxX = x;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+        }
+
+        // Check if we found a valid disk
+        if (minX >= maxX || minY >= maxY) {
+            console.warn('No valid moon disk detected, using fallback cropping');
+            return this._getFallbackBounds(width, height);
+        }
+
+        const bounds = {
+            x: minX,
+            y: minY,
+            width: maxX - minX + 1,
+            height: maxY - minY + 1
+        };
+
+        console.log(`Moon disk detected: x=${bounds.x}, y=${bounds.y}, width=${bounds.width}, height=${bounds.height}`);
+        return bounds;
+    }
+
+    _getFallbackBounds(width, height) {
+        // Fallback: center on image with reasonable size
+        const size = Math.min(width, height) * 0.8; // 80% of smallest dimension
+        const x = (width - size) / 2;
+        const y = (height - size) / 2;
+        
+        return {
+            x: Math.floor(x),
+            y: Math.floor(y),
+            width: Math.floor(size),
+            height: Math.floor(size)
+        };
+    }
+
+    _createCircledVersion(pixbuf, date, diskDiameter = null, margin = 3, outputPath = null) {
+        try {
+            const width = pixbuf.get_width();
+            const height = pixbuf.get_height();
+            const rowstride = pixbuf.get_rowstride();
+            const n_channels = pixbuf.get_n_channels();
+            const has_alpha = pixbuf.get_has_alpha();
+            
+            // Get pixel data
+            const pixels = pixbuf.get_pixels();
+            
+            // Calculate center
+            const centerX = width / 2;
+            const centerY = height / 2;
+            
+            // Calculate EXACT disk radius in cropped image
+            const diskRadius = diskDiameter ? diskDiameter / 2 : Math.min(width, height) / 2 - margin;
+            const circleRadius = diskRadius;
+            
+            console.log(`Circling debug: width=${width}, height=${height}, diskDiameter=${diskDiameter}, diskRadius=${diskRadius}, margin=${margin}`);
+
+            // Circle properties - semi-transparent black circle of 2 pixels
+            const circleWidth = 2;
+            const circleColor = [0, 0, 0, 128]; // Black with 50% transparency (128/255)
+            
+            // Create a copy for the circled version
+            const circledPixels = new Uint8Array(pixels);
+            
+            let circlePixelsCount = 0;
+            
+            // Draw semi-transparent circle EXACTLY on moon disk edge
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+                    
+                    // Circle is drawn exactly on disk edge
+                    // Use ±1 pixel tolerance for continuous circle
+                    if (distance >= circleRadius - 1 && distance <= circleRadius + circleWidth) {
+                        const pixelIndex = y * rowstride + x * n_channels;
+                        
+                        // Set circle color to semi-transparent black
+                        circledPixels[pixelIndex] = circleColor[0];     // R
+                        circledPixels[pixelIndex + 1] = circleColor[1]; // G
+                        circledPixels[pixelIndex + 2] = circleColor[2]; // B
+                        if (has_alpha) {
+                            circledPixels[pixelIndex + 3] = circleColor[3]; // A
+                        }
+                        
+                        circlePixelsCount++;
+                    }
+                }
+            }
+            
+            console.log(`Circle drawn: ${circlePixelsCount} pixels, radius=${circleRadius}`);
+            
+            // Create new pixbuf from circled data
+            const gbytes = GLib.Bytes.new(circledPixels);
+            const circledPixbuf = GdkPixbuf.Pixbuf.new_from_bytes(
+                gbytes,
+                pixbuf.get_colorspace(),
+                has_alpha,
+                pixbuf.get_bits_per_sample(),
+                width,
+                height,
+                rowstride
+            );
+
+            // Save circled version
+            const finalOutputPath = outputPath || this._getCroppedCircledPath(date);
+            circledPixbuf.savev(finalOutputPath, 'png', [], []);
+            
+        } catch (error) {
+            console.error('Error creating circled image:', error);
+        }
+    }
+
+    _createInvertedAndCircledVersion(pixbuf, date, diskDiameter = null, margin = 3) {
+        // Create inverted + desaturated (gray) version with circle
         const MAX_COLOR_VALUE = 255;
         try {
             const width = pixbuf.get_width();
@@ -338,23 +511,36 @@ class MoonPhaseIndicator extends PanelMenu.Button {
             const bits = pixbuf.get_bits_per_sample();
             const colorspace = pixbuf.get_colorspace();
 
-            // Get pixel data and create destination buffer
+            // Source data and destination buffer
             const src = pixbuf.get_pixels();
             const dest = new Uint8Array(src.length);
 
-            // Invert each pixel's RGB values
+            // Inversion + complete desaturation
             for (let y = 0; y < height; y++) {
                 const rowOffset = y * rowstride;
                 for (let x = 0; x < width; x++) {
                     const pixelIndex = rowOffset + x * n_channels;
-                    dest[pixelIndex] = MAX_COLOR_VALUE - src[pixelIndex];
-                    dest[pixelIndex + 1] = MAX_COLOR_VALUE - src[pixelIndex + 1];
-                    dest[pixelIndex + 2] = MAX_COLOR_VALUE - src[pixelIndex + 2];
-                    if (n_channels === 4) dest[pixelIndex + 3] = src[pixelIndex + 3];
+
+                    // 1. Invert colors
+                    const r = MAX_COLOR_VALUE - src[pixelIndex];
+                    const g = MAX_COLOR_VALUE - src[pixelIndex + 1];
+                    const b = MAX_COLOR_VALUE - src[pixelIndex + 2];
+
+                    // 2. Calculate luminance (standard NTSC weighting)
+                    const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+
+                    // 3. Apply uniform gray tint
+                    dest[pixelIndex] = gray;
+                    dest[pixelIndex + 1] = gray;
+                    dest[pixelIndex + 2] = gray;
+
+                    // 4. Preserve original alpha
+                    if (n_channels === 4)
+                        dest[pixelIndex + 3] = src[pixelIndex + 3];
                 }
             }
 
-            // Create new pixbuf from inverted data and save
+            // Create new pixbuf from desaturated array
             const gbytes = GLib.Bytes.new(dest);
             const invertedPixbuf = GdkPixbuf.Pixbuf.new_from_bytes(
                 gbytes,
@@ -366,23 +552,30 @@ class MoonPhaseIndicator extends PanelMenu.Button {
                 rowstride
             );
 
+            ///// use A or B
+            // A) Apply circling to inverted image with correct path
+            // this._createCircledVersion(invertedPixbuf, date, diskDiameter, margin, this._getInvertedPath(date));
+            
+            // B) Inverted image with correct path
             const invertedPath = this._getInvertedPath(date);
             invertedPixbuf.savev(invertedPath, 'png', [], []);
+            
+            
         } catch (error) {
-            console.error('Error creating inverted image:', error);
+            console.error('Error creating inverted grayscale image:', error);
         }
     }
 
-    _downloadStarWalkWithSymbolicFallback(phase, date, cachePath) {
-        // Download moon image from StarWalk with fallback to symbolic icons
-        const url = this._getStarWalkUrl(date);
-
-        this._downloadImageSimple(url, cachePath)
-            .then(() => this._createCroppedImage(cachePath, date))
-            .catch((error) => {
-                console.error('StarWalk download failed, using symbolic fallback:', error);
-                this._useSymbolicFallback(phase.name);
-            });
+    _deleteFile(filePath) {
+        // Delete a file if it exists
+        try {
+            const file = Gio.File.new_for_path(filePath);
+            if (file.query_exists(null)) {
+                file.delete(null);
+            }
+        } catch (error) {
+            console.debug(`Error deleting file ${filePath}:`, error);
+        }
     }
 
     _downloadImageSimple(url, outputPath) {

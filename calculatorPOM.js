@@ -21,7 +21,7 @@ export function calculateNextMajorPhase(date) {
             return { name: phase.name, date: phase.date, diffMs };
         }
     }
-    // Si la date dépasse la dernière phase connue, retourner la première du tableau
+    // If the date exceeds the last known phase, return the first one in the array
     const nextPhase = sortedMoonPhases[0];
     return { name: nextPhase.name, date: nextPhase.date, diffMs: nextPhase.date - date };
 }
