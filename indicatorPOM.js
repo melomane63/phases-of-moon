@@ -203,10 +203,8 @@ class MoonPhaseIndicator extends PanelMenu.Button {
     }
 
     _updatePopupSmart(phase, date) {
-        const showReversed = this._extension._settings.get_boolean('show-reversed-moon-phase');
-        const requestedImagePath = showReversed ? 
-            this._getFilePath(date, 'cropped-graygcale') : 
-            this._getFilePath(date, 'cropped-circled');
+        // Use directly the circled+grayscale image
+        const requestedImagePath = this._getFilePath(date, 'cropped-circled-grayscale');
 
         const file = Gio.File.new_for_path(requestedImagePath);
         if (file.query_exists(null)) {
@@ -263,26 +261,114 @@ class MoonPhaseIndicator extends PanelMenu.Button {
 
             const cropped = pixbuf.new_subpixbuf(finalCropX, finalCropY, finalCropSize, finalCropSize);
 
+            // Step 1: Save the cropped image
             const croppedPath = this._getFilePath(date, 'cropped');
             cropped.savev(croppedPath, 'png', [], []);
             
-            this._createCroppedCircledImage(croppedPath, date, diskDiameter, margin);
+            // Step 2: Create circled + grayscale image in one step
+            const circledGrayscalePath = this._getFilePath(date, 'cropped-circled-grayscale');
+            this._createCircledGrayscaleImage(croppedPath, circledGrayscalePath, diskDiameter, margin);
             
-            const circledPath = this._getFilePath(date, 'cropped-circled');
-            const circledPixbuf = GdkPixbuf.Pixbuf.new_from_file(circledPath);
-            this._createGrayScaleImage(circledPixbuf, date);
-            
+            // Step 3: MOVE the cropped image to moonphase.png
             const staticPath = this._getStaticMoonPhasePath();
-            cropped.savev(staticPath, 'png', [], []);
+            this._moveFile(croppedPath, staticPath);
             
+            // Step 4: Cleanup - delete the downloaded source image
             this._deleteFile(cachePath);
-            this._deleteFile(croppedPath);
             
-            this._styledMenuItem.setMoonImage(circledPath);
+            // Step 5: Use the circled+grayscale image for the popup
+            this._styledMenuItem.setMoonImage(circledGrayscalePath);
 
         } catch (error) {
             console.error('Error creating cropped image:', error);
             this._styledMenuItem.setMoonImage(cachePath);
+        }
+    }
+
+    _moveFile(sourcePath, destPath) {
+        try {
+            const sourceFile = Gio.File.new_for_path(sourcePath);
+            const destFile = Gio.File.new_for_path(destPath);
+            
+            // If the destination file already exists, delete it first
+            if (destFile.query_exists(null)) {
+                destFile.delete(null);
+            }
+            
+            sourceFile.move(destFile, Gio.FileCopyFlags.OVERWRITE, null, null);
+            console.log(`File moved: ${sourcePath} → ${destPath}`);
+        } catch (error) {
+            console.error(`Error moving file ${sourcePath} to ${destPath}:`, error);
+            throw error;
+        }
+    }
+
+    _createCircledGrayscaleImage(inputPath, outputPath, diskDiameter = null, margin = 3) {
+        try {
+            const pixbuf = GdkPixbuf.Pixbuf.new_from_file(inputPath);
+            const width = pixbuf.get_width();
+            const height = pixbuf.get_height();
+            const rowstride = pixbuf.get_rowstride();
+            const n_channels = pixbuf.get_n_channels();
+            const has_alpha = pixbuf.get_has_alpha();
+            const pixels = pixbuf.get_pixels();
+            
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const diskRadius = diskDiameter ? diskDiameter / 2 : Math.min(width, height) / 2 - margin;
+            const circleRadius = diskRadius;
+            
+            console.log(`Creating circled grayscale: width=${width}, height=${height}, diskRadius=${diskRadius}`);
+
+            const circleWidth = 2;
+            const circleColor = [0, 0, 0, 128];
+            const processedPixels = new Uint8Array(pixels);
+            
+            // Apply circling AND grayscale conversion in a single pass
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const pixelIndex = y * rowstride + x * n_channels;
+                    const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+                    
+                    // Grayscale conversion
+                    const r = processedPixels[pixelIndex];
+                    const g = processedPixels[pixelIndex + 1];
+                    const b = processedPixels[pixelIndex + 2];
+                    const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+                    
+                    processedPixels[pixelIndex] = gray;
+                    processedPixels[pixelIndex + 1] = gray;
+                    processedPixels[pixelIndex + 2] = gray;
+                    
+                    // Add the circle
+                    if (distance >= circleRadius - 1 && distance <= circleRadius + circleWidth) {
+                        processedPixels[pixelIndex] = circleColor[0];
+                        processedPixels[pixelIndex + 1] = circleColor[1];
+                        processedPixels[pixelIndex + 2] = circleColor[2];
+                        if (has_alpha) {
+                            processedPixels[pixelIndex + 3] = circleColor[3];
+                        }
+                    }
+                }
+            }
+            
+            const gbytes = GLib.Bytes.new(processedPixels);
+            const resultPixbuf = GdkPixbuf.Pixbuf.new_from_bytes(
+                gbytes,
+                pixbuf.get_colorspace(),
+                has_alpha,
+                pixbuf.get_bits_per_sample(),
+                width,
+                height,
+                rowstride
+            );
+
+            resultPixbuf.savev(outputPath, 'png', [], []);
+            console.log(`Circled grayscale image saved: ${outputPath}`);
+            
+        } catch (error) {
+            console.error('Error creating circled grayscale image:', error);
+            throw error;
         }
     }
 
@@ -358,69 +444,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         };
     }
 
-    _createCroppedCircledImage(croppedPath, date, diskDiameter = null, margin = 3) {
-        try {
-            const pixbuf = GdkPixbuf.Pixbuf.new_from_file(croppedPath);
-            const width = pixbuf.get_width();
-            const height = pixbuf.get_height();
-            const rowstride = pixbuf.get_rowstride();
-            const n_channels = pixbuf.get_n_channels();
-            const has_alpha = pixbuf.get_has_alpha();
-            const pixels = pixbuf.get_pixels();
-            
-            const centerX = width / 2;
-            const centerY = height / 2;
-            const diskRadius = diskDiameter ? diskDiameter / 2 : Math.min(width, height) / 2 - margin;
-            const circleRadius = diskRadius;
-            
-            console.log(`Circling debug: width=${width}, height=${height}, diskDiameter=${diskDiameter}, diskRadius=${diskRadius}, margin=${margin}`);
-
-            const circleWidth = 2;
-            const circleColor = [0, 0, 0, 128];
-            const circledPixels = new Uint8Array(pixels);
-            
-            let circlePixelsCount = 0;
-            
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-                    
-                    if (distance >= circleRadius - 1 && distance <= circleRadius + circleWidth) {
-                        const pixelIndex = y * rowstride + x * n_channels;
-                        
-                        circledPixels[pixelIndex] = circleColor[0];
-                        circledPixels[pixelIndex + 1] = circleColor[1];
-                        circledPixels[pixelIndex + 2] = circleColor[2];
-                        if (has_alpha) {
-                            circledPixels[pixelIndex + 3] = circleColor[3];
-                        }
-                        
-                        circlePixelsCount++;
-                    }
-                }
-            }
-            
-            console.log(`Circle drawn: ${circlePixelsCount} pixels, radius=${circleRadius}`);
-            
-            const gbytes = GLib.Bytes.new(circledPixels);
-            const circledPixbuf = GdkPixbuf.Pixbuf.new_from_bytes(
-                gbytes,
-                pixbuf.get_colorspace(),
-                has_alpha,
-                pixbuf.get_bits_per_sample(),
-                width,
-                height,
-                rowstride
-            );
-
-            const circledPath = this._getFilePath(date, 'cropped-circled');
-            circledPixbuf.savev(circledPath, 'png', [], []);
-            
-        } catch (error) {
-            console.error('Error creating circled image:', error);
-        }
-    }
-
     _deleteFile(filePath) {
         try {
             const file = Gio.File.new_for_path(filePath);
@@ -429,57 +452,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
             }
         } catch (error) {
             console.debug(`Error deleting file ${filePath}:`, error);
-        }
-    }
-
-    _createGrayScaleImage(pixbuf, date) {
-        try {
-            const width = pixbuf.get_width();
-            const height = pixbuf.get_height();
-            const rowstride = pixbuf.get_rowstride();
-            const n_channels = pixbuf.get_n_channels();
-            const has_alpha = pixbuf.get_has_alpha();
-            const bits = pixbuf.get_bits_per_sample();
-            const colorspace = pixbuf.get_colorspace();
-
-            const src = pixbuf.get_pixels();
-            const dest = new Uint8Array(src.length);
-
-            for (let y = 0; y < height; y++) {
-                const rowOffset = y * rowstride;
-                for (let x = 0; x < width; x++) {
-                    const pixelIndex = rowOffset + x * n_channels;
-
-                    const r = src[pixelIndex];
-                    const g = src[pixelIndex + 1];
-                    const b = src[pixelIndex + 2];
-                    const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-
-                    dest[pixelIndex] = gray;
-                    dest[pixelIndex + 1] = gray;
-                    dest[pixelIndex + 2] = gray;
-
-                    if (n_channels === 4)
-                        dest[pixelIndex + 3] = src[pixelIndex + 3];
-                }
-            }
-
-            const gbytes = GLib.Bytes.new(dest);
-            const grayscalePixbuf = GdkPixbuf.Pixbuf.new_from_bytes(
-                gbytes,
-                colorspace,
-                has_alpha,
-                bits,
-                width,
-                height,
-                rowstride
-            );
-
-            const grayscalePath = this._getFilePath(date, 'cropped-graygcale');
-            grayscalePixbuf.savev(grayscalePath, 'png', [], []);
-
-        } catch (error) {
-            console.error('Error creating grayscale image:', error);
         }
     }
 

@@ -1,5 +1,4 @@
 // prefs.js — GNOME 46+ compatible preferences for Phases of Moon extension
-// Fully commented in English
 
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
@@ -19,22 +18,6 @@ export default class PhasesOfMoonPreferences extends ExtensionPreferences {
         // --- Create a group for general options ---
         const generalGroup = new Adw.PreferencesGroup();
         page.add(generalGroup);
-
-        // --- SwitchRow: Toggle reversed moon image ---
-        const reversedSwitch = new Adw.SwitchRow({
-            title: _('Moon phase display'),
-            subtitle: _('Disabled: colored image, Enabled: grayscale image'),
-        });
-
-        // Bind the switch to the GSettings key
-        settings.bind(
-            'show-reversed-moon-phase',
-            reversedSwitch,
-            'active', // property of the switch
-            Gio.SettingsBindFlags.DEFAULT
-        );
-
-        generalGroup.add(reversedSwitch);
 
         // --- ComboRow: Panel position (left, center, right) ---
         const positions = ['left', 'center', 'right'];
@@ -104,4 +87,3 @@ export default class PhasesOfMoonPreferences extends ExtensionPreferences {
         return Promise.resolve();
     }
 }
-
