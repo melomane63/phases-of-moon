@@ -350,7 +350,11 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'Megvilágítás',
             AGE: 'Kor',
             DAYS: 'nap',
-            IN: 'Ekkor:'
+            IN: 'Ekkor:',
+            AT: 'Ekkor',          
+            TODAY: 'Ma',
+            TOMORROW: 'Holnap',
+            ON: ' ' 
         }
     }
 };
