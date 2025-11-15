@@ -1,4 +1,4 @@
-/* indicatorPOM.js - Moon Phase Indicator UI */
+// indicatorPOM.js - Moon Phase Indicator UI
 import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
@@ -8,7 +8,7 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 import { PopupCustom } from './popupPOM.js';
-import { MoonPhaseCalculator } from './calculatorPOM.js';
+import { MoonPhaseCalculator, formatTimeOnly, getDetailedPhaseInfo } from './calculatorPOM.js';
 import { 
     UPDATE_INTERVAL_SECONDS, 
     ICON_SIZE,
@@ -16,21 +16,36 @@ import {
     PHASE_ICONS,
     PHASE_TRANSLATION_MAP,
     STARWALK_URL_TEMPLATE,
-    STARWALK_CALENDAR_URL
+    STARWALK_CALENDAR_URL,
+    LANGUAGE
 } from './constantesPOM.js';
+
+function getExactPhaseTime() {
+    const now = new Date();
+    const result = getDetailedPhaseInfo(now);
+    
+    if (result.date) {
+        const phaseDay = new Date(result.date.getFullYear(), result.date.getMonth(), result.date.getDate());
+        const currentDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        if (currentDay <= phaseDay) {
+            return formatTimeOnly(result.date);
+        }
+    }
+    
+    return null;
+}
 
 export const MoonPhaseIndicator = GObject.registerClass(
 class MoonPhaseIndicator extends PanelMenu.Button {
     _init(extensionPath, extension) {
         super._init(0.0, 'Moon Phase Indicator');
 
-        // Store extension references and initialize components
         this._extensionPath = extensionPath;
         this._extension = extension;
         this._calculator = new MoonPhaseCalculator();
         this._timerId = null;
 
-        // Create the top bar icon
         this.moon_phase_icon = new St.Icon({
             icon_name: 'weather-clear-night-symbolic',
             style_class: 'system-status-icon',
@@ -38,7 +53,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         });
         this.add_child(this.moon_phase_icon);
 
-        // Initialize the menu and start periodic updates
         this._buildMenu();
         this._updateMoonPhase();
         this._startTimer();
@@ -102,51 +116,106 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         return PHASE_TRANSLATION_MAP[englishPhaseName] || englishPhaseName;
     }
 
-    _formatSeconds(seconds) {
-        if (!seconds || seconds === null) return '—';
+    _formatSeconds(seconds, nextPhaseDate, nextPhaseExactDate) {
+        if (!seconds || seconds === null || !nextPhaseDate || !nextPhaseExactDate) return '—';
         
-        const days = Math.floor(seconds / (24 * 3600));
-        const hours = Math.floor((seconds % (24 * 3600)) / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
+        const now = new Date();
+        const targetDate = new Date(now.getTime() + (seconds * 1000));
         
-        let parts = [];
-        if (days > 0) parts.push(`${days} ${LABELS.DAYS.charAt(0)}`);
-        if (hours > 0) parts.push(`${hours} h`);
-        if (minutes > 0) parts.push(`${minutes} min`);
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const targetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
         
-        return parts.join(' ') || '0s';
+        const daysDiff = Math.floor((targetDay - today) / (24 * 3600 * 1000));
+        
+        let countdownStr;
+        
+        if (daysDiff === 0) {
+            const timeOnly = formatTimeOnly(nextPhaseExactDate);
+            countdownStr = `${LABELS.TODAY} ${LABELS.AT} ${timeOnly}`;
+        } else if (daysDiff === 1) {
+            const timeOnly = formatTimeOnly(nextPhaseExactDate);
+            countdownStr = `${LABELS.TOMORROW} ${LABELS.AT} ${timeOnly}`;
+        } else if (daysDiff >= 2) {
+            countdownStr = `${daysDiff} ${LABELS.DAYS}`;
+            return `${countdownStr}${LABELS.ON}${nextPhaseDate}`;
+        } else {
+            return '—';
+        }
+        
+        return countdownStr;
+    }
+
+    _formatDecimal(value) {
+        const rounded = Math.round(value * 10) / 10;
+        
+        if (rounded % 1 === 0) {
+            return rounded.toLocaleString(LANGUAGE, { 
+                minimumFractionDigits: 0, 
+                maximumFractionDigits: 0 
+            });
+        } else {
+            return rounded.toLocaleString(LANGUAGE, { 
+                minimumFractionDigits: 1, 
+                maximumFractionDigits: 1 
+            });
+        }
     }
 
     _updateUIText(moonData, translatedPhaseName) {
-        // Format illumination
         let illuminationStr = '—';
         if (moonData.illumination !== null) {
-            const value = moonData.illumination < 0.1 ? 0 : Number(moonData.illumination).toFixed(0);
-            illuminationStr = `${LABELS.ILLUMINATION}: ${value}%`;
+            const value = moonData.illumination < 0.1 ? 0 : moonData.illumination;
+            const formattedValue = value.toLocaleString(LANGUAGE, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 1
+            });
+            illuminationStr = `${LABELS.ILLUMINATION}: ${formattedValue}%`;
         }
 
-        // Format time to next phase
         let nextPhaseTime = '—';
         let nextPhaseDisplayName = '—';
-        if (moonData.timeToNextPhase !== null) {
-            nextPhaseTime = `${LABELS.IN} ${this._formatSeconds(moonData.timeToNextPhase)}`;
+        if (moonData.timeToNextPhase !== null && moonData.nextPhaseDate !== null && moonData.nextPhaseExactDate !== null) {
+            const formattedTime = this._formatSeconds(moonData.timeToNextPhase, moonData.nextPhaseDate, moonData.nextPhaseExactDate);
+            
+            const now = new Date();
+            const targetDate = new Date(now.getTime() + (moonData.timeToNextPhase * 1000));
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const targetDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+            const daysDiff = Math.floor((targetDay - today) / (24 * 3600 * 1000));
+            
+            if (daysDiff >= 2) {
+                nextPhaseTime = `${LABELS.IN} ${formattedTime}`;
+            } else {
+                nextPhaseTime = formattedTime;
+            }
+            
             nextPhaseDisplayName = this._getNextPhase(translatedPhaseName);
         }
 
-        // Format moon age
         let displayAge = '—';
         if (moonData.age !== null) {
-            const ageValue = moonData.age < 0.1 ? 0 : moonData.age.toFixed(0);
-            displayAge = `${LABELS.AGE}: ${ageValue} ${LABELS.DAYS}`;
+            const ageValue = moonData.age < 0.1 ? 0 : moonData.age;
+            const formattedAge = ageValue.toLocaleString(LANGUAGE, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 1
+            });
+            displayAge = `${LABELS.AGE}: ${formattedAge} ${LABELS.DAYS}`;
         }
 
-        // Update labels
+        const exactPhaseTime = getExactPhaseTime();
+        
+        let phaseTimeDisplay = null;
+        if (exactPhaseTime) {
+            phaseTimeDisplay = `${LABELS.AT} ${exactPhaseTime}`;
+        }
+
         this._styledMenuItem.ageLabel.text = displayAge;
         this._styledMenuItem.nextPhaseNameLabel.text = nextPhaseDisplayName;
         this._styledMenuItem.nextPhaseTimeLabel.text = nextPhaseTime;
 
         this._styledMenuItem.updateData({
             phaseName: translatedPhaseName,
+            phaseTime: phaseTimeDisplay,
             illumination: illuminationStr,
         });
     }
@@ -203,7 +272,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
     }
 
     _updatePopupSmart(phase, date) {
-        // Use directly the circled+grayscale image
         const requestedImagePath = this._getFilePath(date, 'cropped-circled-grayscale');
 
         const file = Gio.File.new_for_path(requestedImagePath);
@@ -261,22 +329,17 @@ class MoonPhaseIndicator extends PanelMenu.Button {
 
             const cropped = pixbuf.new_subpixbuf(finalCropX, finalCropY, finalCropSize, finalCropSize);
 
-            // Step 1: Save the cropped image
             const croppedPath = this._getFilePath(date, 'cropped');
             cropped.savev(croppedPath, 'png', [], []);
             
-            // Step 2: Create circled + grayscale image in one step
             const circledGrayscalePath = this._getFilePath(date, 'cropped-circled-grayscale');
             this._createCircledGrayscaleImage(croppedPath, circledGrayscalePath, diskDiameter, margin);
             
-            // Step 3: MOVE the cropped image to moonphase.png
             const staticPath = this._getStaticMoonPhasePath();
             this._moveFile(croppedPath, staticPath);
             
-            // Step 4: Cleanup - delete the downloaded source image
             this._deleteFile(cachePath);
             
-            // Step 5: Use the circled+grayscale image for the popup
             this._styledMenuItem.setMoonImage(circledGrayscalePath);
 
         } catch (error) {
@@ -290,7 +353,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
             const sourceFile = Gio.File.new_for_path(sourcePath);
             const destFile = Gio.File.new_for_path(destPath);
             
-            // If the destination file already exists, delete it first
             if (destFile.query_exists(null)) {
                 destFile.delete(null);
             }
@@ -324,13 +386,11 @@ class MoonPhaseIndicator extends PanelMenu.Button {
             const circleColor = [0, 0, 0, 128];
             const processedPixels = new Uint8Array(pixels);
             
-            // Apply circling AND grayscale conversion in a single pass
             for (let y = 0; y < height; y++) {
                 for (let x = 0; x < width; x++) {
                     const pixelIndex = y * rowstride + x * n_channels;
                     const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
                     
-                    // Grayscale conversion
                     const r = processedPixels[pixelIndex];
                     const g = processedPixels[pixelIndex + 1];
                     const b = processedPixels[pixelIndex + 2];
@@ -340,7 +400,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
                     processedPixels[pixelIndex + 1] = gray;
                     processedPixels[pixelIndex + 2] = gray;
                     
-                    // Add the circle
                     if (distance >= circleRadius - 1 && distance <= circleRadius + circleWidth) {
                         processedPixels[pixelIndex] = circleColor[0];
                         processedPixels[pixelIndex + 1] = circleColor[1];

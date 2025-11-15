@@ -1,13 +1,11 @@
-/* constantesPOM.js - Constantes et traductions pour Moon Phase Extension */
+// constantesPOM.js - Constants and translations for Moon Phase Extension
 import GLib from 'gi://GLib';
 
-// Locale detection
 const SYSTEM_LOCALE = GLib.getenv('LANG') || 'en_US.UTF-8';
 export const LANGUAGE = SYSTEM_LOCALE.split('.')[0].split('_')[0];
 
-// Translations
 export const TRANSLATIONS = {
-    en: { // English
+    en: {
         MOON_PHASES: {
             NEW_MOON: 'New Moon',
             WAXING_CRESCENT: 'Waxing Crescent',
@@ -22,10 +20,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'Illumination',
             AGE: 'Age',
             DAYS: 'days',
-            IN: 'in'
+            IN: 'in',
+            AT: 'at',
+            TODAY: 'Today',
+            TOMORROW: 'Tomorrow',
+            ON: ' '
         }
     },
-    fr: { // French
+    fr: {
         MOON_PHASES: {
             NEW_MOON: 'Nouvelle Lune',
             WAXING_CRESCENT: 'Premier Croissant',
@@ -40,10 +42,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'Illumination',
             AGE: 'Âge',
             DAYS: 'jours',
-            IN: 'dans'
+            IN: 'dans',
+            AT: 'à',
+            TODAY: 'Aujourd\'hui',
+            TOMORROW: 'Demain',
+            ON: ' le '
         }
     },
-    es: { // Spanish
+    es: {
         MOON_PHASES: {
             NEW_MOON: 'Luna Nueva',
             WAXING_CRESCENT: 'Luna Creciente',
@@ -58,10 +64,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'Iluminación',
             AGE: 'Edad',
             DAYS: 'días',
-            IN: 'en'
+            IN: 'en',
+            AT: 'a',
+            TODAY: 'Hoy',
+            TOMORROW: 'Mañana',
+            ON: ' el '
         }
     },
-    de: { // German
+    de: {
         MOON_PHASES: {
             NEW_MOON: 'Neumond',
             WAXING_CRESCENT: 'Zunehmende Sichel',
@@ -76,10 +86,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'Beleuchtung',
             AGE: 'Alter',
             DAYS: 'Tage',
-            IN: 'in'
+            IN: 'in',
+            AT: 'um',
+            TODAY: 'Heute',
+            TOMORROW: 'Morgen',
+            ON: ' am '
         }
     },
-    it: { // Italian
+    it: {
         MOON_PHASES: {
             NEW_MOON: 'Luna Nuova',
             WAXING_CRESCENT: 'Luna Crescente',
@@ -94,10 +108,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'Illuminazione',
             AGE: 'Età',
             DAYS: 'giorni',
-            IN: 'in'
+            IN: 'in',
+            AT: 'alle',
+            TODAY: 'Oggi',
+            TOMORROW: 'Domani',
+            ON: ' il '
         }
     },
-    pt: { // Portuguese
+    pt: {
         MOON_PHASES: {
             NEW_MOON: 'Lua Nova',
             WAXING_CRESCENT: 'Lua Crescente',
@@ -112,10 +130,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'Iluminação',
             AGE: 'Idade',
             DAYS: 'dias',
-            IN: 'em'
+            IN: 'em',
+            AT: 'às',
+            TODAY: 'Hoje',
+            TOMORROW: 'Amanhã',
+            ON: ' '
         }
     },
-    ru: { // Russian
+    ru: {
         MOON_PHASES: {
             NEW_MOON: 'Новолуние',
             WAXING_CRESCENT: 'Растущий серп',
@@ -130,10 +152,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'Освещённость',
             AGE: 'Возраст',
             DAYS: 'дней',
-            IN: 'через'
+            IN: 'через',
+            AT: 'в',
+            TODAY: 'Сегодня',
+            TOMORROW: 'Завтра',
+            ON: ' '
         }
     },
-    zh: { // Chinese
+    zh: {
         MOON_PHASES: {
             NEW_MOON: '新月',
             WAXING_CRESCENT: '蛾眉月',
@@ -148,10 +174,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: '照明',
             AGE: '月龄',
             DAYS: '天',
-            IN: '在'
+            IN: '在',
+            AT: '于',
+            TODAY: '今天',
+            TOMORROW: '明天',
+            ON: ' '
         }
     },
-    ja: { // Japanese
+    ja: {
         MOON_PHASES: {
             NEW_MOON: '新月',
             WAXING_CRESCENT: '三日月',
@@ -166,10 +196,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: '照度',
             AGE: '月齢',
             DAYS: '日',
-            IN: 'で'
+            IN: 'で',
+            AT: 'に',
+            TODAY: '今日',
+            TOMORROW: '明日',
+            ON: ' '
         }
     },
-    ko: { // Korean
+    ko: {
         MOON_PHASES: {
             NEW_MOON: '신월',
             WAXING_CRESCENT: '초승달',
@@ -184,10 +218,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: '조도',
             AGE: '월령',
             DAYS: '일',
-            IN: '에서'
+            IN: '에서',
+            AT: '에',
+            TODAY: '오늘',
+            TOMORROW: '내일',
+            ON: ' '
         }
     },
-    ar: { // Arabic
+    ar: {
         MOON_PHASES: {
             NEW_MOON: 'محاق',
             WAXING_CRESCENT: 'هلال أول',
@@ -202,10 +240,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'الإضاءة',
             AGE: 'العمر',
             DAYS: 'أيام',
-            IN: 'في'
+            IN: 'في',
+            AT: 'في',
+            TODAY: 'اليوم',
+            TOMORROW: 'غداً',
+            ON: ' '
         }
     },
-    hi: { // Hindi
+    hi: {
         MOON_PHASES: {
             NEW_MOON: 'अमावस्या',
             WAXING_CRESCENT: 'बढ़ता चंद्रमा',
@@ -220,10 +262,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'रोशनी',
             AGE: 'आयु',
             DAYS: 'दिन',
-            IN: 'में'
+            IN: 'में',
+            AT: 'पर',
+            TODAY: 'आज',
+            TOMORROW: 'कल',
+            ON: ' '
         }
     },
-    tr: { // Turkish
+    tr: {
         MOON_PHASES: {
             NEW_MOON: 'Yeni Ay',
             WAXING_CRESCENT: 'Hilal',
@@ -238,10 +284,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'Aydınlanma',
             AGE: 'Yaş',
             DAYS: 'gün',
-            IN: 'içinde'
+            IN: 'içinde',
+            AT: '',
+            TODAY: 'Bugün',
+            TOMORROW: 'Yarın',
+            ON: ' '
         }
     },
-    nl: { // Dutch
+    nl: {
         MOON_PHASES: {
             NEW_MOON: 'Nieuwe Maan',
             WAXING_CRESCENT: 'Wassende Maan',
@@ -256,10 +306,14 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'Verlichting',
             AGE: 'Leeftijd',
             DAYS: 'dagen',
-            IN: 'in'
+            IN: 'in',
+            AT: 'om',
+            TODAY: 'Vandaag',
+            TOMORROW: 'Morgen',
+            ON: ' '
         }
     },
-    pl: { // Polish
+    pl: {
         MOON_PHASES: {
             NEW_MOON: 'Nów',
             WAXING_CRESCENT: 'Rożek przybywający',
@@ -274,18 +328,20 @@ export const TRANSLATIONS = {
             ILLUMINATION: 'Oświetlenie',
             AGE: 'Wiek',
             DAYS: 'dni',
-            IN: 'za'
+            IN: 'za',
+            AT: 'o',
+            TODAY: 'Dziś',
+            TOMORROW: 'Jutro',
+            ON: ' '
         }
     }
 };
 
-// Use detected language or English as default
 const LANG = TRANSLATIONS[LANGUAGE] || TRANSLATIONS.en;
 
 export const MOON_PHASES = Object.freeze(LANG.MOON_PHASES);
 export const LABELS = Object.freeze(LANG.LABELS);
 
-// PHASE_ICONS must use original (English) keys for mapping
 export const PHASE_ICONS = Object.freeze({
     'New Moon': 'New-moon-symbolic',
     'Waxing Crescent': 'Waxing-crescent-symbolic',
@@ -299,17 +355,14 @@ export const PHASE_ICONS = Object.freeze({
 
 export const PHASE_NAMES = Object.values(MOON_PHASES);
 
-// Mapping from English phases to translated phases
 export const PHASE_TRANSLATION_MAP = {};
 Object.keys(TRANSLATIONS.en.MOON_PHASES).forEach(key => {
     PHASE_TRANSLATION_MAP[TRANSLATIONS.en.MOON_PHASES[key]] = MOON_PHASES[key];
 });
 
-// Configuration constants
 export const UPDATE_INTERVAL_SECONDS = 3600;
 export const ICON_SIZE = 18;
-export const POPUP_ICON_SIZE = 100; 
+export const POPUP_ICON_SIZE = 100;
 
-// StarWalk URLs
 export const STARWALK_URL_TEMPLATE = 'https://starwalk.space/assets/moon-calendar/phases/moon-phase-london-uk-{year}-{month}-{day}-m.png';
 export const STARWALK_CALENDAR_URL = 'https://starwalk.space/en/moon-calendar';
