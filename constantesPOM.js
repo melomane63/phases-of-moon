@@ -334,24 +334,6 @@ export const TRANSLATIONS = {
             TOMORROW: 'Jutro',
             ON: ' '
         }
-    },
-    hu: {
-        MOON_PHASES: {
-            NEW_MOON: 'Újhold',
-            WAXING_CRESCENT: 'Növő sarló',
-            FIRST_QUARTER: 'Első negyed',
-            WAXING_GIBBOUS: 'Növő hold',
-            FULL_MOON: 'Telihold',
-            WANING_GIBBOUS: 'Fogyó hold',
-            LAST_QUARTER: 'Utolsó negyed',
-            WANING_CRESCENT: 'Fogyó sarló'
-        },
-        LABELS: {
-            ILLUMINATION: 'Megvilágítás',
-            AGE: 'Kor',
-            DAYS: 'nap',
-            IN: 'Ekkor:'
-        }
     }
 };
 
