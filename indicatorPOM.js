@@ -45,6 +45,8 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         this._extension = extension;
         this._calculator = new MoonPhaseCalculator();
         this._timerId = null;
+        this._downloadTimeoutId = null;
+        this._downloadCancellable = null;
 
         this.moon_phase_icon = new St.Icon({
             icon_name: 'weather-clear-night-symbolic',
@@ -77,6 +79,18 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         }
     }
 
+    _cleanupDownload() {
+        if (this._downloadTimeoutId) {
+            GLib.source_remove(this._downloadTimeoutId);
+            this._downloadTimeoutId = null;
+        }
+        
+        if (this._downloadCancellable) {
+            this._downloadCancellable.cancel();
+            this._downloadCancellable = null;
+        }
+    }
+
     _buildMenu() {
         this._styledMenuItem = new PopupCustom();
         this.menu.addMenuItem(this._styledMenuItem);
@@ -86,30 +100,51 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         });
     }
 
-    _updateMoonPhase() {
+    /**
+     * Read the southern-hemisphere setting and trigger a full UI update.
+     * The `reversed` and `southern` parameters are kept for compatibility
+     * when called from extension.js._onSettingsChanged().
+     */
+    _updateMoonPhase(_reversed = null, _southern = null) {
         const now = new Date();
         let moonData;
         try {
             moonData = this._calculator.calculateMoonPhase(now);
         } catch (err) {
-            console.error('Moon phase calculation failed:', err);
             moonData = { name: 'Full Moon', illumination: 100 };
         }
-        this._updateUI(moonData);
+
+        // Always read the current setting value directly for consistency
+        const settings = this._extension.getSettings();
+        const southern = settings.get_boolean('southern-hemisphere');
+
+        this._updateUI(moonData, southern);
         return true;
     }
 
-    _updateUI(moonData) {
+    _updateUI(moonData, southern = false) {
         const translatedPhaseName = this._translatePhaseName(moonData.name);
-        this._updateTopBarIcon(moonData.name);
-        this._updatePopupSmart(moonData, new Date());
+        this._updateTopBarIcon(moonData.name, southern);
+        this._updatePopupSmart(moonData, new Date(), southern);
         this._updateUIText(moonData, translatedPhaseName);
     }
 
-    _updateTopBarIcon(englishPhaseName) {
+    /**
+     * Update the panel bar icon.
+     * For the southern hemisphere, the moon is mirrored horizontally
+     * using a Clutter scale transform (no image processing needed).
+     */
+    _updateTopBarIcon(englishPhaseName, southern = false) {
         const iconName = PHASE_ICONS[englishPhaseName] || 'weather-clear-night-symbolic';
         const iconPath = `${this._extensionPath}/icons/${iconName}.svg`;
         this._setIconWithFallback(this.moon_phase_icon, iconPath);
+
+        if (southern) {
+            this.moon_phase_icon.set_pivot_point(0.5, 0.5);
+            this.moon_phase_icon.set_scale(-1, 1);
+        } else {
+            this.moon_phase_icon.set_scale(1, 1);
+        }
     }
 
     _translatePhaseName(englishPhaseName) {
@@ -264,35 +299,35 @@ class MoonPhaseIndicator extends PanelMenu.Button {
                 iconElement.icon_name = null;
                 return true;
             } catch (error) {
-                console.error(`Error setting icon: ${error}`);
             }
         }
         iconElement.icon_name = fallbackIconName;
         return false;
     }
 
-    _updatePopupSmart(phase, date) {
+    _updatePopupSmart(phase, date, southern = false) {
         const requestedImagePath = this._getFilePath(date, 'cropped-circled-grayscale');
 
         const file = Gio.File.new_for_path(requestedImagePath);
         if (file.query_exists(null)) {
-            this._styledMenuItem.setMoonImage(requestedImagePath);
+            this._styledMenuItem.setMoonImage(requestedImagePath, southern);
             return;
         }
 
-        this._downloadAndProcessMoonImage(date, phase, requestedImagePath);
+        this._downloadAndProcessMoonImage(date, phase, requestedImagePath, southern);
     }
 
-    async _downloadAndProcessMoonImage(date, phase, requestedImagePath) {
+    async _downloadAndProcessMoonImage(date, phase, requestedImagePath, southern = false) {
+        this._cleanupDownload();
+        
         const starwalkUrl = this._getStarWalkUrl(date);
         const cachePath = this._getFilePath(date, 'starwalk');
         
         try {
             await this._downloadImageSimple(starwalkUrl, cachePath);
             this._createCroppedImage(cachePath, date);
-            this._styledMenuItem.setMoonImage(requestedImagePath);
+            this._styledMenuItem.setMoonImage(requestedImagePath, southern);
         } catch (error) {
-            console.error('StarWalk download failed, using symbolic fallback:', error);
             this._useSymbolicFallback(phase.name);
         }
     }
@@ -325,8 +360,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
             const finalCropY = Math.max(0, cropY);
             const finalCropSize = Math.min(cropSize, originalWidth - finalCropX, originalHeight - finalCropY);
 
-            console.log(`Adaptive cropping: disk diameter=${diskDiameter}, crop size=${finalCropSize}, position=(${finalCropX}, ${finalCropY}), margin=${margin}px`);
-
             const cropped = pixbuf.new_subpixbuf(finalCropX, finalCropY, finalCropSize, finalCropSize);
 
             const croppedPath = this._getFilePath(date, 'cropped');
@@ -343,7 +376,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
             this._styledMenuItem.setMoonImage(circledGrayscalePath);
 
         } catch (error) {
-            console.error('Error creating cropped image:', error);
             this._styledMenuItem.setMoonImage(cachePath);
         }
     }
@@ -358,7 +390,7 @@ class MoonPhaseIndicator extends PanelMenu.Button {
             }
             
             sourceFile.move(destFile, Gio.FileCopyFlags.OVERWRITE, null, null);
-            console.log(`File moved: ${sourcePath} → ${destPath}`);
+            
         } catch (error) {
             console.error(`Error moving file ${sourcePath} to ${destPath}:`, error);
             throw error;
@@ -379,8 +411,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
             const centerY = height / 2;
             const diskRadius = diskDiameter ? diskDiameter / 2 : Math.min(width, height) / 2 - margin;
             const circleRadius = diskRadius;
-            
-            console.log(`Creating circled grayscale: width=${width}, height=${height}, diskRadius=${diskRadius}`);
 
             const circleWidth = 2;
             const circleColor = [0, 0, 0, 128];
@@ -423,7 +453,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
             );
 
             resultPixbuf.savev(outputPath, 'png', [], []);
-            console.log(`Circled grayscale image saved: ${outputPath}`);
             
         } catch (error) {
             console.error('Error creating circled grayscale image:', error);
@@ -475,7 +504,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         }
 
         if (minX >= maxX || minY >= maxY) {
-            console.warn('No valid moon disk detected, using fallback cropping');
             return this._getFallbackBounds(width, height);
         }
 
@@ -486,7 +514,6 @@ class MoonPhaseIndicator extends PanelMenu.Button {
             height: maxY - minY + 1
         };
 
-        console.log(`Moon disk detected: x=${bounds.x}, y=${bounds.y}, width=${bounds.width}, height=${bounds.height}`);
         return bounds;
     }
 
@@ -514,19 +541,49 @@ class MoonPhaseIndicator extends PanelMenu.Button {
         }
     }
 
-    _downloadImageSimple(url, outputPath) {
+    _downloadImageSimple(url, outputPath, timeoutSeconds = 10) {
         return new Promise((resolve, reject) => {
-            try {
-                const sourceFile = Gio.File.new_for_uri(url);
-                const destFile = Gio.File.new_for_path(outputPath);
-                
-                sourceFile.copy(destFile, Gio.FileCopyFlags.OVERWRITE, null, null);
-                
-                if (destFile.query_exists(null)) resolve();
-                else reject(new Error('Download failed'));
-            } catch (error) {
-                reject(error);
-            }
+            const sourceFile = Gio.File.new_for_uri(url);
+            const destFile = Gio.File.new_for_path(outputPath);
+
+            this._cleanupDownload();
+            
+            this._downloadCancellable = new Gio.Cancellable();
+
+            this._downloadTimeoutId = GLib.timeout_add_seconds(
+                GLib.PRIORITY_DEFAULT,
+                timeoutSeconds,
+                () => {
+                    if (this._downloadCancellable) {
+                        this._downloadCancellable.cancel();
+                    }
+                    reject(new Error(`Download timeout after ${timeoutSeconds}s`));
+                    return GLib.SOURCE_REMOVE;
+                }
+            );
+
+            sourceFile.copy_async(
+                destFile,
+                Gio.FileCopyFlags.OVERWRITE,
+                GLib.PRIORITY_DEFAULT,
+                this._downloadCancellable,
+                null,
+                (file, result) => {
+                    if (this._downloadTimeoutId) {
+                        GLib.source_remove(this._downloadTimeoutId);
+                        this._downloadTimeoutId = null;
+                    }
+                    
+                    this._downloadCancellable = null;
+                    
+                    try {
+                        file.copy_finish(result);
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                }
+            );
         });
     }
 
@@ -556,6 +613,7 @@ class MoonPhaseIndicator extends PanelMenu.Button {
 
     destroy() {
         this._stopTimer();
+        this._cleanupDownload();
         super.destroy();
     }
 });

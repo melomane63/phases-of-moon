@@ -5,6 +5,7 @@ const SYSTEM_LOCALE = GLib.getenv('LANG') || 'en_US.UTF-8';
 export const LANGUAGE = SYSTEM_LOCALE.split('.')[0].split('_')[0];
 
 export const TRANSLATIONS = {
+
     en: {
         MOON_PHASES: {
             NEW_MOON: 'New Moon',
@@ -27,6 +28,7 @@ export const TRANSLATIONS = {
             ON: ' '
         }
     },
+
     fr: {
         MOON_PHASES: {
             NEW_MOON: 'Nouvelle Lune',
@@ -49,6 +51,7 @@ export const TRANSLATIONS = {
             ON: ' le '
         }
     },
+
     es: {
         MOON_PHASES: {
             NEW_MOON: 'Luna Nueva',
@@ -71,6 +74,7 @@ export const TRANSLATIONS = {
             ON: ' el '
         }
     },
+
     de: {
         MOON_PHASES: {
             NEW_MOON: 'Neumond',
@@ -93,6 +97,7 @@ export const TRANSLATIONS = {
             ON: ' am '
         }
     },
+
     it: {
         MOON_PHASES: {
             NEW_MOON: 'Luna Nuova',
@@ -115,6 +120,7 @@ export const TRANSLATIONS = {
             ON: ' il '
         }
     },
+
     pt: {
         MOON_PHASES: {
             NEW_MOON: 'Lua Nova',
@@ -137,6 +143,7 @@ export const TRANSLATIONS = {
             ON: ' '
         }
     },
+
     ru: {
         MOON_PHASES: {
             NEW_MOON: 'Новолуние',
@@ -159,6 +166,7 @@ export const TRANSLATIONS = {
             ON: ' '
         }
     },
+
     zh: {
         MOON_PHASES: {
             NEW_MOON: '新月',
@@ -181,6 +189,7 @@ export const TRANSLATIONS = {
             ON: ' '
         }
     },
+
     ja: {
         MOON_PHASES: {
             NEW_MOON: '新月',
@@ -203,6 +212,7 @@ export const TRANSLATIONS = {
             ON: ' '
         }
     },
+
     ko: {
         MOON_PHASES: {
             NEW_MOON: '신월',
@@ -225,6 +235,7 @@ export const TRANSLATIONS = {
             ON: ' '
         }
     },
+
     ar: {
         MOON_PHASES: {
             NEW_MOON: 'محاق',
@@ -247,6 +258,7 @@ export const TRANSLATIONS = {
             ON: ' '
         }
     },
+
     hi: {
         MOON_PHASES: {
             NEW_MOON: 'अमावस्या',
@@ -269,6 +281,7 @@ export const TRANSLATIONS = {
             ON: ' '
         }
     },
+
     tr: {
         MOON_PHASES: {
             NEW_MOON: 'Yeni Ay',
@@ -291,6 +304,7 @@ export const TRANSLATIONS = {
             ON: ' '
         }
     },
+
     nl: {
         MOON_PHASES: {
             NEW_MOON: 'Nieuwe Maan',
@@ -313,6 +327,7 @@ export const TRANSLATIONS = {
             ON: ' '
         }
     },
+
     pl: {
         MOON_PHASES: {
             NEW_MOON: 'Nów',
@@ -335,7 +350,8 @@ export const TRANSLATIONS = {
             ON: ' '
         }
     },
-    hu: { // Hungarian
+
+    hu: {
         MOON_PHASES: {
             NEW_MOON: 'Újhold',
             WAXING_CRESCENT: 'Növő sarló',
@@ -351,12 +367,176 @@ export const TRANSLATIONS = {
             AGE: 'Kor',
             DAYS: 'nap',
             IN: 'Ekkor:',
-            AT: 'Ekkor',          
+            AT: 'Ekkor',
             TODAY: 'Ma',
             TOMORROW: 'Holnap',
-            ON: ' ' 
+            ON: ' '
+        }
+    },
+
+    // === NEW LANGUAGES ADDED ===
+
+    ur: {
+        MOON_PHASES: {
+            NEW_MOON: 'نیا چاند',
+            WAXING_CRESCENT: 'بڑھتا ہلال',
+            FIRST_QUARTER: 'پہلا چوتھائی',
+            WAXING_GIBBOUS: 'بڑھتا چاند',
+            FULL_MOON: 'پورا چاند',
+            WANING_GIBBOUS: 'گھٹتا چاند',
+            LAST_QUARTER: 'آخری چوتھائی',
+            WANING_CRESCENT: 'گھٹتا ہلال'
+        },
+        LABELS: {
+            ILLUMINATION: 'روشنائی',
+            AGE: 'عمر',
+            DAYS: 'دن',
+            IN: 'میں',
+            AT: 'پر',
+            TODAY: 'آج',
+            TOMORROW: 'کل',
+            ON: ' '
+        }
+    },
+
+    tl: {
+        MOON_PHASES: {
+            NEW_MOON: 'Bagong Buwan',
+            WAXING_CRESCENT: 'Lumalagong Gasuklay',
+            FIRST_QUARTER: 'Unang Kuwarter',
+            WAXING_GIBBOUS: 'Lumalagong Buwan',
+            FULL_MOON: 'Kabilugan ng Buwan',
+            WANING_GIBBOUS: 'Humuhupang Buwan',
+            LAST_QUARTER: 'Huling Kuwarter',
+            WANING_CRESCENT: 'Humuhupang Gasuklay'
+        },
+        LABELS: {
+            ILLUMINATION: 'Liwanag',
+            AGE: 'Edad',
+            DAYS: 'araw',
+            IN: 'sa loob ng',
+            AT: 'sa',
+            TODAY: 'Ngayon',
+            TOMORROW: 'Bukas',
+            ON: ' '
+        }
+    },
+
+    uk: {
+        MOON_PHASES: {
+            NEW_MOON: 'Молодик',
+            WAXING_CRESCENT: 'Зростаючий серп',
+            FIRST_QUARTER: 'Перша чверть',
+            WAXING_GIBBOUS: 'Зростаючий місяць',
+            FULL_MOON: 'Повня',
+            WANING_GIBBOUS: 'Спадний місяць',
+            LAST_QUARTER: 'Остання чверть',
+            WANING_CRESCENT: 'Спадний серп'
+        },
+        LABELS: {
+            ILLUMINATION: 'Освітленість',
+            AGE: 'Вік',
+            DAYS: 'днів',
+            IN: 'через',
+            AT: 'о',
+            TODAY: 'Сьогодні',
+            TOMORROW: 'Завтра',
+            ON: ' '
+        }
+    },
+
+    sw: {
+        MOON_PHASES: {
+            NEW_MOON: 'Mwezi Mpya',
+            WAXING_CRESCENT: 'Mwezi Mwandamo',
+            FIRST_QUARTER: 'Robo ya Kwanza',
+            WAXING_GIBBOUS: 'Mwezi Unaokua',
+            FULL_MOON: 'Mwezi Mzima',
+            WANING_GIBBOUS: 'Mwezi Unaopungua',
+            LAST_QUARTER: 'Robo ya Mwisho',
+            WANING_CRESCENT: 'Mwezi Mwembamba Unaopungua'
+        },
+        LABELS: {
+            ILLUMINATION: 'Mwangaza',
+            AGE: 'Umri',
+            DAYS: 'siku',
+            IN: 'ndani ya',
+            AT: 'saa',
+            TODAY: 'Leo',
+            TOMORROW: 'Kesho',
+            ON: ' '
+        }
+    },
+
+    am: {
+        MOON_PHASES: {
+            NEW_MOON: 'አዲስ ጨረቃ',
+            WAXING_CRESCENT: 'የሚያድግ ጨረቃ',
+            FIRST_QUARTER: 'መጀመሪያ ሩብ',
+            WAXING_GIBBOUS: 'የሚያድግ ጨረቃ',
+            FULL_MOON: 'ሙሉ ጨረቃ',
+            WANING_GIBBOUS: 'የሚቀንስ ጨረቃ',
+            LAST_QUARTER: 'የመጨረሻ ሩብ',
+            WANING_CRESCENT: 'የሚቀንስ ጨረቃ'
+        },
+        LABELS: {
+            ILLUMINATION: 'ብርሃን',
+            AGE: 'እድሜ',
+            DAYS: 'ቀናት',
+            IN: 'ውስጥ',
+            AT: 'በ',
+            TODAY: 'ዛሬ',
+            TOMORROW: 'ነገ',
+            ON: ' '
+        }
+    },
+
+    cs: {
+        MOON_PHASES: {
+            NEW_MOON: 'Nov',
+            WAXING_CRESCENT: 'Dorůstající srpek',
+            FIRST_QUARTER: 'První čtvrť',
+            WAXING_GIBBOUS: 'Dorůstající měsíc',
+            FULL_MOON: 'Úplněk',
+            WANING_GIBBOUS: 'Ubývající měsíc',
+            LAST_QUARTER: 'Poslední čtvrť',
+            WANING_CRESCENT: 'Ubývající srpek'
+        },
+        LABELS: {
+            ILLUMINATION: 'Osvětlení',
+            AGE: 'Stáří',
+            DAYS: 'dní',
+            IN: 'za',
+            AT: 'v',
+            TODAY: 'Dnes',
+            TOMORROW: 'Zítra',
+            ON: ' '
+        }
+    },
+
+    sv: {
+        MOON_PHASES: {
+            NEW_MOON: 'Nymåne',
+            WAXING_CRESCENT: 'Tilltagande skära',
+            FIRST_QUARTER: 'Första kvarteret',
+            WAXING_GIBBOUS: 'Tilltagande måne',
+            FULL_MOON: 'Fullmåne',
+            WANING_GIBBOUS: 'Avtagande måne',
+            LAST_QUARTER: 'Sista kvarteret',
+            WANING_CRESCENT: 'Avtagande skära'
+        },
+        LABELS: {
+            ILLUMINATION: 'Belysning',
+            AGE: 'Ålder',
+            DAYS: 'dagar',
+            IN: 'om',
+            AT: 'kl.',
+            TODAY: 'Idag',
+            TOMORROW: 'Imorgon',
+            ON: ' '
         }
     }
+
 };
 
 const LANG = TRANSLATIONS[LANGUAGE] || TRANSLATIONS.en;
@@ -386,5 +566,8 @@ export const UPDATE_INTERVAL_SECONDS = 3600;
 export const ICON_SIZE = 18;
 export const POPUP_ICON_SIZE = 100;
 
-export const STARWALK_URL_TEMPLATE = 'https://starwalk.space/assets/moon-calendar/phases/moon-phase-london-uk-{year}-{month}-{day}-m.png';
-export const STARWALK_CALENDAR_URL = 'https://starwalk.space/en/moon-calendar';
+export const STARWALK_URL_TEMPLATE =
+    'https://starwalk.space/assets/moon-calendar/phases/moon-phase-london-uk-{year}-{month}-{day}-m.png';
+
+export const STARWALK_CALENDAR_URL =
+    'https://starwalk.space/en/moon-calendar';

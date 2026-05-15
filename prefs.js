@@ -1,5 +1,4 @@
 // prefs.js — GNOME 46+ compatible preferences for Phases of Moon extension
-
 import Adw from 'gi://Adw';
 import Gio from 'gi://Gio';
 import Gtk from 'gi://Gtk';
@@ -12,7 +11,7 @@ export default class PhasesOfMoonPreferences extends ExtensionPreferences {
         // --- Create the main Preferences Page ---
         const page = new Adw.PreferencesPage({
             title: _('General'),
-            icon_name: 'dialog-information-symbolic', // Info icon
+            icon_name: 'dialog-information-symbolic',
         });
 
         // --- Create a group for general options ---
@@ -21,8 +20,6 @@ export default class PhasesOfMoonPreferences extends ExtensionPreferences {
 
         // --- ComboRow: Panel position (left, center, right) ---
         const positions = ['left', 'center', 'right'];
-
-        // Gtk.StringList is the recommended model for ComboRow
         const positionModel = new Gtk.StringList();
         positions.forEach(pos => positionModel.append(pos));
 
@@ -33,21 +30,15 @@ export default class PhasesOfMoonPreferences extends ExtensionPreferences {
         });
         positionRow.use_subtitle = true;
 
-        // Set the initial selection based on saved settings
         const currentPos = settings.get_string('panel-position');
         const posIndex = Math.max(0, positions.indexOf(currentPos));
-        if (typeof positionRow.set_selected === 'function')
-            positionRow.set_selected(posIndex);
-        else
-            positionRow.selected = posIndex;
+        positionRow.selected = posIndex;
 
-        // Update GSettings when the user changes the selection
         positionRow.connect('notify::selected', () => {
-            const sel = (typeof positionRow.get_selected === 'function') ? positionRow.get_selected() : positionRow.selected;
+            const sel = positionRow.selected;
             if (sel >= 0 && sel < positions.length)
                 settings.set_string('panel-position', positions[sel]);
         });
-
         generalGroup.add(positionRow);
 
         // --- ComboRow: Panel priority (0-7) ---
@@ -62,27 +53,34 @@ export default class PhasesOfMoonPreferences extends ExtensionPreferences {
         });
         priorityRow.use_subtitle = true;
 
-        // Set the initial selection based on saved settings
         const currentPriority = settings.get_int('panel-priority');
         const priorityIndex = Math.min(Math.max(0, currentPriority), priorities.length - 1);
-        if (typeof priorityRow.set_selected === 'function')
-            priorityRow.set_selected(priorityIndex);
-        else
-            priorityRow.selected = priorityIndex;
+        priorityRow.selected = priorityIndex;
 
-        // Update GSettings when the user changes the selection
         priorityRow.connect('notify::selected', () => {
-            const sel = (typeof priorityRow.get_selected === 'function') ? priorityRow.get_selected() : priorityRow.selected;
+            const sel = priorityRow.selected;
             if (sel >= 0 && sel < priorities.length)
                 settings.set_int('panel-priority', parseInt(priorities[sel], 10));
         });
-
         generalGroup.add(priorityRow);
+
+        // --- SwitchRow: Southern Hemisphere ---
+        const hemisphereRow = new Adw.SwitchRow({
+            title: _('Southern Hemisphere'),
+            subtitle: _('Mirror the moon display horizontally for southern hemisphere observers'),
+        });
+        settings.bind(
+            'southern-hemisphere',
+            hemisphereRow,
+            'active',
+            Gio.SettingsBindFlags.DEFAULT
+        );
+        generalGroup.add(hemisphereRow);
 
         // --- Finalize page ---
         window.add(page);
-        window.default_width = 480;  // reasonable default width
-        window.default_height = 400; // reasonable default height
+        window.default_width = 480;
+        window.default_height = 400;
 
         return Promise.resolve();
     }

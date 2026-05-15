@@ -2,19 +2,20 @@
 <schemalist gettext-domain="phases-of-moon-extension">
   <schema id="org.gnome.shell.extensions.phases-of-moon"
           path="/org/gnome/shell/extensions/phases-of-moon/">
-
     <key name="panel-position" type="s">
       <default>"center"</default>
       <summary>Panel position for the indicator (left, center, right)</summary>
       <description>Defines in which part of the GNOME panel the indicator is displayed</description>
     </key>
-
     <key name="panel-priority" type="i">
       <default>0</default>
       <summary>Indicator priority (0–7)</summary>
-      <description>Sets the indicator’s order within its panel section</description>
+      <description>Sets the indicator's order within its panel section</description>
     </key>
-
+    <key name="southern-hemisphere" type="b">
+      <default>false</default>
+      <summary>Southern Hemisphere</summary>
+      <description>Mirror moon phase display horizontally for southern hemisphere observers</description>
+    </key>
   </schema>
 </schemalist>
-

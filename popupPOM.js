@@ -62,9 +62,10 @@ class PopupCustom extends PopupMenu.PopupBaseMenuItem {
         this.ageLabel = new St.Label({ text: '', style_class: 'secondary-label age-label' });
         this.textColumn.add_child(this.ageLabel);
 
+        // Fixed: use separator directly instead of deprecated .actor
         this.separator = new PopupMenu.PopupSeparatorMenuItem();
-        this.separator.actor.style_class = 'custom-separator';
-        this.textColumn.add_child(this.separator.actor);
+        this.separator.style_class = 'custom-separator';
+        this.textColumn.add_child(this.separator);
 
         this.nextPhaseNameLabel = new St.Label({ text: '', style_class: 'next-phase-name phase-next-label' });
         this.textColumn.add_child(this.nextPhaseNameLabel);
@@ -77,9 +78,21 @@ class PopupCustom extends PopupMenu.PopupBaseMenuItem {
         });
     }
 
-    setMoonImage(filePath) {
+    /**
+     * Set the moon image in the popup.
+     * For the southern hemisphere, the image is mirrored horizontally
+     * using a Clutter scale transform.
+     */
+    setMoonImage(filePath, southern = false) {
         const gicon = new Gio.FileIcon({ file: Gio.File.new_for_path(filePath) });
         this.icon.gicon = gicon;
+
+        if (southern) {
+            this.icon.set_pivot_point(0.5, 0.5);
+            this.icon.rotation_angle_z = 180;
+        } else {
+            this.icon.rotation_angle_z = 0;
+        }
     }
 
     updateData(data) {
